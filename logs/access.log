@@ -63,3 +63,5 @@ remote-addr - POST /api/auth/reset-password/fde12050c31939aac99113133b6efa78f102
 remote-addr - POST /api/auth/login 500 28.371 ms Thunder Client (https://www.thunderclient.com)  Thu, 12 Jun 2025 13:27:55 GMT -error-message: Expected ',' or '}' after property value in JSON at position 69
 remote-addr - POST /api/auth/login 400 4.740 ms Thunder Client (https://www.thunderclient.com)  Thu, 12 Jun 2025 13:28:18 GMT -error-message: "body.password" length must be at least 6 characters long
 remote-addr - POST /api/auth/login 200 149.340 ms Thunder Client (https://www.thunderclient.com) Thu, 12 Jun 2025 13:28:23 GMT
+remote-addr - POST /api/auth/login 200 233.364 ms Thunder Client (https://www.thunderclient.com) Thu, 12 Jun 2025 16:01:36 GMT
+remote-addr - POST /api/auth/login 200 215.588 ms Thunder Client (https://www.thunderclient.com) Thu, 12 Jun 2025 16:11:45 GMT
