@@ -1,10 +1,9 @@
-const express = require('express');
+
 const mongoose = require('mongoose');
 const http = require('http');
 const config = require('./config/config');
 const app = require('./server'); // Import the app from app.js
 const logger = require('./config/logger');
-
 // Connect to the database
 mongoose.connect(config.dbConnection, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => logger.info('Database connected'))

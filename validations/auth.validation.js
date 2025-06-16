@@ -2,9 +2,11 @@ const joi = require('joi');
 
 const signupSchema = {
   body: joi.object().keys({
+    first_name: joi.string().min(1).required(),
+    last_name: joi.string().min(1).required(),
     email: joi.string().email().required(),
     password: joi.string().min(6).required(),
-    name: joi.string().min(1).required(),
+    phone_number: joi.string().required(),
   }),
 };
 

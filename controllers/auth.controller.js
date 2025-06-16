@@ -1,95 +1,105 @@
-const generateTokenAndSetCookie = require("../utils/generateTokenAndSetCookie.js");
-const catchAsync = require("../utils/catchAsync");
+const User = require("../models/user.model.js");
 const authService = require("../services/auth.service.js");
+const setCookies = require("../utils/setCookies.js"); // Cookie setting logic
+const catchAsync = require("../utils/catchAsync.js");
+const crypto = require("crypto");
+const httpStatus = require("http-status"); // Assuming you're using a package for HTTP status codes
 
 const signup = catchAsync(async (req, res) => {
-	const { email, password, name } = req.body;
+  const { email, password, first_name, last_name, phone_number } = req.body;
 
-	const user = await authService.createUser(email, password, name);
-	generateTokenAndSetCookie(res, user._id);
-	await sendVerificationEmail(user.email, user.verificationToken);
+  const { user, accessToken, refreshToken } = await authService.createUser(email, password, first_name, last_name, phone_number);
+  setCookies(res, accessToken, refreshToken);
 
-	res.status(201).json({
-		success: true,
-		message: "User created successfully",
-		user: {
-			...user._doc,
-			password: undefined,
-		},
-	});
+  res.status(httpStatus.default.CREATED).json({
+    success: true,
+    message: "User created successfully",
+    user: {
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      role: user.role,
+    },
+  });
 });
 
 const verifyEmail = catchAsync(async (req, res) => {
-	const { code } = req.body;
+  const { code } = req.body;
 
-	const user = await authService.verifyUserEmail(code);
-	await sendWelcomeEmail(user.email, user.name);
+  const user = await authService.verifyUserEmail(code);
+  await authService.sendWelcomeEmail(user.email, user.first_name);
 
-	res.status(200).json({
-		success: true,
-		message: "Email verified successfully",
-		user: {
-			...user._doc,
-			password: undefined,
-		},
-	});
+  res.status(httpStatus.default.OK).json({
+    success: true,
+    message: "Email verified successfully",
+    user: {
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+    },
+  });
 });
 
 const login = catchAsync(async (req, res) => {
-	const { email, password } = req.body;
+  const { email, password } = req.body;
 
-	const user = await authService.authenticateUser(email, password);
-	generateTokenAndSetCookie(res, user._id);
-	user.lastLogin = new Date();
-	await user.save();
+  const { user, accessToken, refreshToken } = await authService.loginUser(email, password);
+  setCookies(res, accessToken, refreshToken);
 
-	res.status(200).json({
-		success: true,
-		message: "Logged in successfully",
-		user: {
-			...user._doc,
-			password: undefined,
-		},
-	});
+  res.status(httpStatus.default.OK).json({
+    success: true,
+    message: "Logged in successfully",
+    user: {
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      role: user.role,
+    },
+  });
 });
 
 const logout = catchAsync(async (req, res) => {
-	res.clearCookie("token");
-	res.status(200).json({ success: true, message: "Logged out successfully" });
+  await authService.logoutUser(req.cookies.refreshToken);
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  res.status(httpStatus.default.OK).json({ success: true, message: "Logged out successfully" });
 });
 
 const forgotPassword = catchAsync(async (req, res) => {
-	const { email } = req.body;
-	const resetToken = crypto.randomBytes(20).toString("hex");
+  const { email } = req.body;
+  const resetToken = crypto.randomBytes(20).toString("hex");
 
-	await authService.sendResetEmail(email, resetToken);
-	res.status(200).json({ success: true, message: "Password reset link sent to your email" });
+  await authService.sendResetEmail(email, resetToken);
+  res.status(httpStatus.default.OK).json({ success: true, message: "Password reset link sent to your email" });
 });
 
 const resetPassword = catchAsync(async (req, res) => {
-	const { token } = req.params;
-	const { password } = req.body;
+  const { token } = req.params;
+  const { password } = req.body;
 
-	const user = await authService.resetUserPassword(token, password);
-	await sendResetSuccessEmail(user.email);
-	res.status(200).json({ success: true, message: "Password reset successful" });
+  const user = await authService.resetUserPassword(token, password);
+  await authService.sendResetSuccessEmail(user.email);
+  res.status(httpStatus.default.OK).json({ success: true, message: "Password reset successful" });
 });
 
-const checkAuth = catchAsync(async (req, res) => {
-	const user = await User.findById(req.userId).select("-password");
-	if (!user) {
-		return res.status(400).json({ success: false, message: "User not found" });
-	}
+const getProfile = catchAsync(async (req, res) => {
+  const user = await User.findById(req.userId).select("-password");
+  if (!user) {
+    return res.status(httpStatus.default.BAD_REQUEST).json({ success: false, message: "User not found" });
+  }
 
-	res.status(200).json({ success: true, user });
+  res.status(httpStatus.default.OK).json({ success: true, user });
 });
 
 module.exports = {
-	signup,
-	verifyEmail,
-	login,
-	logout,
-	forgotPassword,
-	resetPassword,
-	checkAuth,
+  signup,
+  verifyEmail,
+  login,
+  logout,
+  forgotPassword,
+  resetPassword,
+  getProfile,
 };
